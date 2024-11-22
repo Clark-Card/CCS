@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        #gift-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #6200ee;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3700b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="gift-card">
+        <h1>Gift Card</h1>
+        <p>Card Number: <span id="card-number">4477 3592 4388 2350</span></p> <!-- Real, valid card number -->
+        <p>Expiration Date: <span id="exp-date">01/28</span></p> <!-- Updated expiration date -->
+        <p>Security Code: <span id="security-code">462</span></p> <!-- Updated security code -->
+        <p>Balance: $<span id="card-balance">100</span></p>
+        <p>Cardholder: <span id="cardholder-name">Grand Adventures</span></p>
+        <p>Billing Address: <span id="billing-address">809 Rosa St., Celebration, FL 34747</span></p>
+        <button id="edit-balance-btn">Edit Balance</button>
+    </div>
+    <script>
+        // Load balance from localStorage when the page loads
+        function loadBalance() {
+            const savedBalance = localStorage.getItem('cardBalance');
+            if (savedBalance) {
+                document.getElementById('card-balance').textContent = savedBalance;
+            }
+        }
+
+        // Save balance to localStorage when updated
+        function saveBalance(balance) {
+            localStorage.setItem('cardBalance', balance);
+        }
+
+        document.getElementById('edit-balance-btn').addEventListener('click', function() {
+            let newBalance = prompt("Enter new balance:");
+            if (newBalance !== null && !isNaN(newBalance)) {
+                // Update card balance for display
+                document.getElementById('card-balance').textContent = parseFloat(newBalance).toFixed(2);
+                // Save new balance to localStorage
+                saveBalance(parseFloat(newBalance));
+                // POS compatibility function
+                updatePOSBalance(parseFloat(newBalance));
+            } else {
+                alert("Please enter a valid number.");
+            }
+        });
+
+        // Function to update balance in POS system
+        function updatePOSBalance(balance) {
+            // Use the live API URL to update balance
+            fetch('https://us-central1-the-clark-card.cloudfunctions.net/updateBalance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ balance: balance })
+            })
+            .then(response => {
+                // Log the response status for debugging
+                console.log('Response Status:', response.status);
+                
+                // If response is not OK (200-299), throw an error
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                console.log('Balance updated in POS:', data);
+            })
+            .catch(error => {
+                console.error('Error updating balance in POS:', error);
+            });
+        }
+
+        // Call the function to load balance on page load
+        loadBalance();
+    </script>
+</body>
+</html>
